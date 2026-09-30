@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'services/ai_service.dart';
 
 void main() {
   runApp(const DeenAIApp());
@@ -15,7 +16,6 @@ class DeenAIApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.green,
-        brightness: Brightness.light,
       ),
       home: const HomeScreen(),
     );
@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Learn, ask and explore authentic Islamic knowledge.',
+                    'Learn, ask and explore Islamic knowledge with DEEN AI.',
                   ),
                 ],
               ),
@@ -66,19 +66,19 @@ class HomeScreen extends StatelessWidget {
           _FeatureCard(
             icon: Icons.menu_book_outlined,
             title: 'Quran',
-            subtitle: 'Keep Quran reading and learning in one place.',
+            subtitle: 'Quran learning section — coming next.',
             onTap: () {},
           ),
           _FeatureCard(
             icon: Icons.auto_stories_outlined,
             title: 'Hadith',
-            subtitle: 'Explore hadith topics with source references.',
+            subtitle: 'Hadith learning with source references — coming next.',
             onTap: () {},
           ),
           _FeatureCard(
             icon: Icons.check_circle_outline,
             title: 'Daily Quiz',
-            subtitle: 'Test your Islamic knowledge.',
+            subtitle: 'Test your Islamic knowledge — coming next.',
             onTap: () {},
           ),
         ],
@@ -131,22 +131,27 @@ class _ChatScreenState extends State<ChatScreen> {
   final messages = <Map<String, String>>[
     {
       'role': 'assistant',
-      'text': 'Assalamu Alaikum! What would you like to learn about Islam?'
-    }
+      'text': 'Assalamu Alaikum! What would you like to learn about Islam?',
+    },
   ];
+  bool isLoading = false;
 
-  void sendMessage() {
+  Future<void> sendMessage() async {
     final text = controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || isLoading) return;
 
+    controller.clear();
     setState(() {
       messages.add({'role': 'user', 'text': text});
-      messages.add({
-        'role': 'assistant',
-        'text':
-            'Your question has been received. The AI response service will be connected in the next build step. For religious rulings, please verify answers with a qualified scholar and reliable sources.'
-      });
-      controller.clear();
+      isLoading = true;
+    });
+
+    final reply = await AiService.ask(text);
+
+    if (!mounted) return;
+    setState(() {
+      messages.add({'role': 'assistant', 'text': reply});
+      isLoading = false;
     });
   }
 
@@ -179,7 +184,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     decoration: BoxDecoration(
                       color: isUser
                           ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(message['text'] ?? ''),
@@ -188,6 +195,11 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('DEEN AI is thinking...'),
+            ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -206,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: sendMessage,
+                    onPressed: isLoading ? null : sendMessage,
                     icon: const Icon(Icons.send),
                   ),
                 ],
