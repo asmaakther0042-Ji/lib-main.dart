@@ -19,3 +19,5 @@ DEEN AI is a Flutter-based Islamic learning and AI assistant app.
 5. Test Android release build and prepare Play Store assets.
 
 Important: AI-generated religious answers should be checked against reliable primary sources and, for rulings, a qualified scholar.
+
+Build workflow note: Android CI removes Flutter's generated sample widget test before analysis.
